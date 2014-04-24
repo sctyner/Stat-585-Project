@@ -1,18 +1,25 @@
 <!DOCTYPE html>
-<!-- saved from url=(0014)about:internet -->
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-<meta http-equiv="x-ua-compatible" content="IE=9" >
 
 <title>585 Project Plan</title>
+
+
+
+
 
 <style type="text/css">
 body, td {
    font-family: sans-serif;
    background-color: white;
-   font-size: 12px;
-   margin: 8px;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  line-height: 20px;
 }
 
 tt, code, pre {
@@ -47,19 +54,21 @@ a:visited {
    color: rgb(50%, 0%, 50%);
 }
 
-pre {	
-   margin-top: 0;
-   max-width: 95%;
-   border: 1px solid #ccc;
-   white-space: pre-wrap;
+pre, img {
+  max-width: 100%;
 }
 
 pre code {
    display: block; padding: 0.5em;
 }
 
-code.r, code.cpp {
-   background-color: #F8F8F8;
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
 }
 
 table, td, th {
@@ -132,10 +141,7 @@ hr {
       page-break-after: avoid; 
    }
 }
-
 </style>
-
-
 
 
 
@@ -187,7 +193,7 @@ hr {
 
 <h2>My Project So Far: Wed, April 9th</h2>
 
-<p>So far, I have cleaned all of the data in the first section of the Brookings institute data (the demographics of congress), and I have started a shiny app to easily visualize the Brookings data.  I&#39;ve also started looking at the FEC data. A sample of the cleaned data is in diversity.csv, which lists the number of senators and representatives from the historically underrepresented groups given in the Brookings data: African Americans, Hispanic Americans, and Women.</p>
+<p>So far, I have cleaned all of the data in the first section of the Brookings institute data (the demographics of congress), and I have started a shiny app to easily visualize the Brookings data.  I&#39;ve also started looking at the FEC data. A sample of the cleaned data is in congressional_diversity.csv, which lists the number of senators and representatives from the historically underrepresented groups given in the Brookings data: African Americans, Hispanic Americans, and Women.  The code I used to clean the data is in congressstuff.R. </p>
 
 <p>I&#39;ve also started examining the FEC data, which was very easy to read into R and group by state and district using dplyr. The data cleaning for the Brookings data, on the other hand, is really turning out to be quite cumbersome, but I definitely have a good system in place that I can apply to cleaning the other 3 areas I&#39;m interested in. I&#39;ve started looking at the second item, which contains a lot of information about change of party power and net gains and losses of seats, and I&#39;m excited to start putting that information together with the demographic information.  </p>
 
@@ -196,4 +202,3 @@ hr {
 </body>
 
 </html>
-

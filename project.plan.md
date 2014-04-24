@@ -38,7 +38,7 @@ I have many ideas for this project, and I've listed them all here. I probably wo
 
 My Project So Far: Wed, April 9th
 --------------------------------------------------------
-So far, I have cleaned all of the data in the first section of the Brookings institute data (the demographics of congress), and I have started a shiny app to easily visualize the Brookings data.  I've also started looking at the FEC data. A sample of the cleaned data is in diversity.csv, which lists the number of senators and representatives from the historically underrepresented groups given in the Brookings data: African Americans, Hispanic Americans, and Women.
+So far, I have cleaned all of the data in the first section of the Brookings institute data (the demographics of congress), and I have started a shiny app to easily visualize the Brookings data.  I've also started looking at the FEC data. A sample of the cleaned data is in congressional_diversity.csv, which lists the number of senators and representatives from the historically underrepresented groups given in the Brookings data: African Americans, Hispanic Americans, and Women.  The code I used to clean the data is in congressstuff.R. 
 
 I've also started examining the FEC data, which was very easy to read into R and group by state and district using dplyr. The data cleaning for the Brookings data, on the other hand, is really turning out to be quite cumbersome, but I definitely have a good system in place that I can apply to cleaning the other 3 areas I'm interested in. I've started looking at the second item, which contains a lot of information about change of party power and net gains and losses of seats, and I'm excited to start putting that information together with the demographic information.  
 
