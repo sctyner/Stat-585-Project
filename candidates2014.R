@@ -1,16 +1,18 @@
 #######2014 candidate summary
 candidates14<-read.csv('~/Desktop/585/Project/CandidateSummaryAction.csv')
 names(candidates14)
-candidates14<-candidates14[,-c(1,2)]
+candidates14<-candidates14[,3:8]
 
 library(dplyr)
-
-candidate_info14<-candidates14[,1:6]
-names(candidate_info14)<-c("Name","Office","State","District","Party","Seat_Status")
-candidate_counts<-group_by(candidate_info14,State,District)%.%arrange(State,District,Office)%.%summarise(n=length(Name))
+names(candidates14)<-c("Name","Office","State","District","Party","Status")
+candidate_counts<-group_by(candidate_info14,State,District,Office)%.%arrange(State,District,Office)%.%summarise(n=length(Name))
 
 candidate_info14<-group_by(candidate_info14,State,District)%.%arrange(State,District,Office)
 
+#################
+cand.url<-'http://www.fec.gov/data/CandidateSummaryPrint.do?format=html'
+cand.table<-readHTMLTable(cand.url)
+head(cand.table[[2]])
 
 #########presidents of the USA
 library(XML)

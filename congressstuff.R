@@ -17,6 +17,22 @@ appor.seats.state<-melt(appor.seats.state, id='Region.and.State')
 appor.seats.state$value<-as.numeric(sub('[a-z]','',appor.seats.state$value))
 names(appor.seats.state)<-c('State','Census.Year','No.reps')
 
+library(maps)
+library(ggvis)
+data(state)
+states.map<-map_data('state')
+appor.for.map<-appor.seats.state
+appor.for.map$State<-tolower(appor.for.map$State)
+names(appor.for.map)[1]<-'region'
+states.seats<-merge(states.map,appor.for.map,by='region',sort=F)
+states.seats<-sort_df(states.seats,vars=c('group','order'))
+ggplot()+labs(title='House Members per State after 1980 Census')+geom_polygon(data=subset(states.seats,Census.Year==1980),aes(x=long, y=lat, group = group, fill=No.reps))+theme(rect= element_blank(),line = element_blank(),axis.title = element_blank(),axis.text = element_blank())+scale_fill_continuous(limits=c(1,53),low="grey", high="#B8078C")
+ggplot()+labs(title='House Members per State after 1910 Census')+geom_polygon(data=subset(states.seats,Census.Year==1910),aes(x=long, y=lat, group = group, fill=No.reps))+theme(rect= element_blank(),line = element_blank(),axis.title = element_blank(),axis.text = element_blank())+scale_fill_continuous(limits=c(1,53),low="grey", high="#B8078C")
+
+ 
+
+
+
 # number of seats in congress by region - appor.seats.reg
 appor.seats.reg<-appor.seats[which(appor.seats$Region.and.State %in% c("South","Border","New England","Mid-Atlantic","Midwest","Plains","Rocky Mountains","Pacific Coast")),]
 names(appor.seats.reg)<-c('Region',names(appor.seats.reg)[-1])
@@ -59,6 +75,18 @@ dem.strg.perc$Region<-unique(appor.seats.reg$Region)
 dem.strg.perc<-melt(dem.strg.perc,id="Region")
 names(dem.strg.perc)<-c("Region","Congress","Perc.dems")
 dem.strg.perc$Perc.dems<-as.numeric(dem.strg.perc$Perc.dems)
+
+states$region<-tolower(states$State)
+dem.reg.strg<-merge(merge(states.map,states[,2:4],by='region'),dem.strg.perc,by='Region')
+dem.reg.strg<-sort_df(dem.reg.strg,vars=c('group','order'))
+
+ggplot()+labs(title='Regional Democratic Strength, 69th Congress')+
+  geom_polygon(data=subset(dem.reg.strg,Congress=69),aes(x=long, y=lat, group = group, fill=Perc.dems))+
+  theme(rect= element_blank(),line = element_blank(),axis.title = element_blank(),axis.text = element_blank())+
+  scale_fill_continuous(limits=c(0,100),low="grey", high="#2B07B8")+
+  coord_fixed(ratio=2/1.2)
+
+
 
 # dem.strg.cnt<-subset(dem.strg,Region=="Seats")
 # dem.strg.cnt$Region<-unique(appor.seats.reg$Region)
@@ -167,7 +195,8 @@ parties.all<-melt(parties.all,id=c('Region','Congress','No.Total','Office'))
 levels(parties.all$variable)<-c('Democrat','Perc.alldems','Republican','Perc.allreps')
 parties.all.count<-subset(parties.all, variable %in% c('Democrat','Republican'))
 parties.all.perc<-subset(parties.all, variable %in% c('Perc.alldems','Perc.allreps'))
-
+names(parties.all.count)<-c('Region','Congress','TotalinRegion','Office','Party','Count')
+parties.all.count<-parties.all.count[,c(2,1,4,5,6)]
 qplot(Congress,value,color=Region,geom='point',shape=variable,data=parties.all.count)+facet_wrap(variable~Office)
 ##Data set as years of congresses for reference
 congresses<-read.csv("/Users/samanthatyner/Desktop/585/Project/congress_years.csv")
@@ -281,9 +310,24 @@ prior.occ.congress<-melt(prior.occ.congress,id=c('Congress','Occupation'))
 names(prior.occ.congress)<-c('Congress','Occupation','Office','Count')
 levels(prior.occ.congress$Office)<-c('House','Senate')
 prior.occ.congress$Occupation<-as.factor(prior.occ.congress$Occupation)
+head(prior.occ.congress)
+prior.occ.congress<-prior.occ.congress[,c(1,3,2,4)]
+grouped.occ<-group_by(prior.occ.congress,Congress,Office)%.%arrange(Congress,Office,Occupation)%.%mutate(tot = sum(Count), perc = Count/tot)
+qplot(Congress,fill=perc, data=grouped.occ,geom='ribbon',ymin=0,ymax=1,color=Occupation,position='stack')
+qplot(Congress,perc,data=grouped.occ,fill=Occupation,geom='area',position='stack')
+qplot(Congress,data=grouped.occ,geom='path')
+qplot(Congress,perc,geom='path',data=grouped.occ,color=Occupation,position='fill',ymax=1)+scale_x_continuous()#+geom_ribbon(aes(ymin=0,ymax=1,position='stack'))
 
+qplot(Congress, Count, color=Occupation,data=prior.occ.congress,geom='point')+geom_area(aes(fill=Occupation,position='stack'))
 #look at changes of the occupation trends over time
+###
 
+p<-ggplot(as.data.frame(grouped.occ), aes(x=Congress,y=perc))
+p+geom_area(aes(colour= Occupation, fill = Occupation), position = 'fill')
+qplot(x=Congress, fill=Occupation, position="fill", data=grouped.occ, binwidth=2)
+
+qplot(Congress,Occupation,data=as.data.frame(grouped.occ),size=perc,color=Occupation)
+qplot(Congress, perc, data = grouped.occ, color = Occupation, geom = "path")+geom_area()
 #sheet 12: Prior Occupations of Democratic Senators, 83rd - 113th Congresses, 1953 - 2014
 priors.sen.dem<-readWorksheet(wb, sheet = "1-12",startRow=3,endRow=30)
 priors.sen.dem<-priors.sen.dem[-19,]
@@ -553,8 +597,8 @@ defeat.incumb<-defeat.incumb[-which(defeat.incumb$Party=='Total'),]
 defeat.incumb<-melt(defeat.incumb,id=c('Year','Party','Incumbents.lost','Avg.terms'))
 defeat.incumb<-sort_df(defeat.incumb,vars=c('Year','variable'))
 defeat.incumb<-defeat.incumb[,c(1,2,5,6,3,4)]
-names(defeat.incumb)<-c('Year','Party','Terms.served','Incumbents.lost','Tot.party.loss','Avg.terms')
-levels(defeat.incumb$Terms.served)<-c('1','2','3','4-6','7-9','10+')
+names(defeat.incumb)<-c('Year','Party','Terms','In.lost','Tot.party.loss','Avg.terms')
+levels(defeat.incumb$Terms)<-c('1','2','3','4-6','7-9','10+')
 defeat.incumb$Office<-'House'
 qplot(Year,Incumbents.lost,data=defeat.incumb,group=Terms.served,geom='point',color=Party,size=Terms.served)+
   geom_path(aes(x=Year,y=Tot.party.loss,group=Party,linetype=Party),size=1)
@@ -601,8 +645,10 @@ party.lines2<-merge(party.lines,voter.turnout)
 party.lines2$Type.elec<-as.factor(party.lines2$Type.elec)
 party.lines2$Type.voter<-as.factor(party.lines2$Type.voter)
 party.lines2$Perc.voters<-as.numeric(party.lines2$Perc.voters)
+party.lines2$Year<-as.numeric(party.lines2$Year)
 
-qplot(Year,Perc.voters,geom='point',color=Type.elec,data=party.lines,shape=Type.voter,size=I(3))+scale_colour_manual(values = wes.palette(3, "Zissou")) 
+
+qplot(Year,Perc.voters,geom='point',color=Type.voter,data=subset(party.lines2,Type.elec!='Pres'),size=I(2))+facet_wrap(~Type.elec)
 
 ################################################################################
 wb8<-loadWorkbook("/Users/samanthatyner/Desktop/585/Project/VitalStatisticsFullData/Vital Statistics Chapter 8 - Political Polarization in Congress and Changing Voting Alignments.xlsx")
@@ -711,7 +757,8 @@ party.unity<-melt(party.unity,id='Year')
 names(party.unity)<-c('Year','Office','Perc.unity.votes')
 party.unity$Year<-as.numeric(party.unity$Year)
 
-qplot(Year,Perc.unity.votes,data=party.unity,geom='point',group=Office)+geom_path(aes(color=Office))+geom_vline(xintercept=midterm.years[6:21])
+qplot(Year,Perc.unity.votes,data=party.unity,geom='point') +
+  geom_path()+facet_wrap(~Office)+labs(title = 'Percentage of Party Unity Votes')
 
 #Party Unity Scores in Congressional Voting, 1954-2012 (percent)
 #Note: Data show the percentage of members voting with a majority of their
@@ -734,7 +781,9 @@ unity.by.party<-cbind(unity.by.party,ldply(strsplit(as.character(unity.by.party$
 unity.by.party<-unity.by.party[,c(1,4,5,3)]
 names(unity.by.party)<-c('Year','Office','Party','Perc.unity')
 
-qplot(Year,Perc.unity,data=subset(unity.by.party,Party!='SouthDems'),geom='point',color=Party)+geom_path()+facet_wrap(~Office)
+qplot(Year,Perc.unity,data=subset(unity.by.party,Party!='SouthDems'),geom='point',color=Party) +
+  geom_path()+facet_wrap(~Office)+scale_color_manual(values=c("#2B07B8", "#E30926")) +
+  labs(title = 'Percent of Members Voting with their Own Party')
 #Average Ideological Positions of House Party Coalitions, 80th-112th Congresses, 1947-2012  
 #scores based on members' voting records. A positive score denotes a conservative ideology, 
 #while a negative score denotes a liberal one. Scores closest to zero reflect the most centrist 
@@ -767,6 +816,13 @@ senate.ideology<-melt(senate.ideology,id=c('Congress','Year.Start'))
 senate.ideology$Congress<-as.numeric(senate.ideology$Congress)
 senate.ideology$Year.Start<-as.numeric(senate.ideology$Year.Start)
 
+house.ideology$Office<-'House'
+senate.ideology$Office<-'Senate'
+
+ideology<-data.frame(rbind(house.ideology,senate.ideology))
+names(ideology)<-c('Congress','Year.Start','Party','Score','Office')
+
+
 qplot(Year.Start,value,data=senate.ideology,color=variable)
 qplot(Year.Start,Democrats,data=senate.ideology)+geom_hline(aes(yintercept=mean(Democrats)),color='blue')
 qplot(Year.Start,Republicans,data=senate.ideology)+geom_hline(aes(yintercept=mean(Republicans)),color='red')
@@ -796,6 +852,12 @@ qplot(Year.Start,Bills.introduceda,data=senate.workload,geom='point')+geom_hline
 qplot(Year.Start,Bills.passed,data=senate.workload,geom='point')+geom_hline(yintercept=1670)+geom_vline(xintercept=midterm.years[6:21])
 qplot(Year.Start,Ratio.of.bills.passed.to.bills.introduced,data=senate.workload,geom='point')+geom_hline(yintercept=0.5241682)+ylim(0,.6)
 
+senate.workload$Office<-'Senate'
+house.workload$Office<-'House'
+names(house.workload)<-names(senate.workload)
+workload<-data.frame(rbind(senate.workload,house.workload))
+names(workload)<-c('Congress','Year','Year.End','No.Introduced','Intro/Member','Bills.Passed','Passed/Introduced','No.votes','DaysinSession','HoursinSession','Hrs/Day.inSession','Committee','Office')
+
 #Recorded Votes in the House and the Senate, 80th-112th Congresses, 1947-2012
 congress.votes<-readWorksheet(wb6,sheet = "6-3", startRow=3, endRow=69,startCol=10,endCol=12)
 congress.votes<-melt(congress.votes,id='Year')
@@ -813,7 +875,10 @@ bills.passed<-cbind(bills.passed,ldply(strsplit(as.character(bills.passed$variab
 bills.passed<-bills.passed[,-2]
 names(bills.passed)<-c('Congress','Count','Bill.Type','Variable')
 bills.passed<-bills.passed[,c(1,3,4,2)]
+bills.passed$Bill.Type<-as.factor(bills.passed$Bill.Type)
+bills.passed$Variable<-as.factor(bills.passed$Variable)
 
+qplot(Congress,Count,data=subset(bills.passed, Variable == 'BillsEnacted'),color=Bill.Type)
 #Vetoes and Overrides, 80th-112th Congresses, 1947-2012
 vetoes<-readWorksheet(wb6,sheet = "6-6", startRow=4, endRow=37, endCol=)
 vetoes$Congress<-80:112
@@ -823,3 +888,42 @@ vetoes<-vetoes[,-3]
 names(vetoes)<-c('Congress','Year','Total.PresVetoes','Vetoes','PocketVetoes','Overridden','Perc.Vetoes','House.OverrideAttempts','Senate.OverrideAttempts')
 vetoes<-merge(pres.yr.party,vetoes)
 qplot(Year,Total.PresVetoes,data=vetoes,color=Party)
+
+
+ideology.bills<-merge(ideology, bills.passed, by='Congress')
+avg.ideol<-filter(ideology.bills,Variable == 'BillsEnacted', Party == 'Entire.chamber')
+
+qplot(Year.Start, Score,geom='point', color=Score, shape = Office,data=avg.ideol, size= I(2),)+scale_color_gradient(limits=c(-.2,.2),low="#2B07B8", high="#E30926" )+geom_vline(aes(xintercept=1975),linetype='dotdash',color="#2B07B8")+geom_vline(aes(xintercept=2011),linetype='dotdash',color="#E30926")
+
+qplot(Year.Start, Score, geom= 'point', color=Party, data = subset(ideology.bills, Party != 'Entire.chamber'),main = 'Political Ideology in the House and Senate by Party') + facet_wrap(~Office)+coord_fixed(ratio=120)+scale_color_manual(values=c("#2B07B8", "#E30926"))
+
+
+library(segmented)
+rep.score.house<-filter(ideology.bills, Party=='Republicans', Office == 'House')
+model<-segmented(lm(Score~Year.Start,data = rep.score.house),seg.Z =~Year.Start, psi = 1975)
+#davies.test(lm(Score~Year.Start,data=rep.score.house),~Year.Start,k=nrow(rep.score.house),alternative='two.sided')
+pred.score<-predict.segmented(model,newdata=rep.score.house$Year.Start)
+
+rep.score.house$fitted<-pred.score
+
+qplot(Year.Start, Score, data = rep.score.house, geom='point',main='Political Ideology of Republicans in the House of Representatives, 1947-2011') +
+  geom_path(aes(y=fitted))+geom_vline(aes(xintercept=1978.393)) +
+  annotate('text',label='Midterm Election (Carter)',x = 1970, y = .6, size = 5,colour='red')
+
+
+names(congresses)[2]<-'Year'
+work.yrs<-merge(workload,congresses)
+work.yrs.pres <- merge(work.yrs,pres.yr.party,by='Year')
+names(work.yrs.pres)[15]<-'Pres.Party'
+ggplot(data = work.yrs.pres) + 
+  geom_point(aes(Year, Bills.Passed,color = Pres.Party),size = I(2)) + 
+  facet_wrap(~Office) +
+  geom_vline(xintercept = 1978, color = 'red') + 
+  geom_vline(xintercept = 1947, color = 'green') +
+  scale_color_manual(values=c("#2B07B8", "#E30926")) +
+  annotate('text',label='"Do-Nothing" Congress',x = 1960, y = 500, size = 3,color='green') + 
+  annotate('text',label='Carter Midterm Election',x = 1990, y = 2000, size = 3,color='red') +   
+  labs(title= 'Number of Bills Passed by the House and Senate, 1947-2011')
+
+
+
